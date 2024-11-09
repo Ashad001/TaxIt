@@ -1,35 +1,18 @@
-from langchain_qdrant import RetrievalMode
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import PyPDFLoader
+# from langchain_qdrant import RetrievalMode
+# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain.document_loaders import PyPDFLoader
 from dotenv import load_dotenv
-from langchain.embeddings import HuggingFaceBgeEmbeddings
-from langchain_qdrant import QdrantVectorStore
+# from langchain.embeddings import HuggingFaceBgeEmbeddings
+import pickle
 import os
 import re
 import PyPDF2
-from qdrant_client import QdrantClient
+import chromadb
+import sys
 
-# Load environment variables
-load_dotenv()
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-QDRANT_CLUSTER_URL = os.getenv("QDRANT_CLUSTER_URL")
+# __import__("pysqlite3")
+# sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
 
-qdrant_client = QdrantClient(
-
-    url=QDRANT_CLUSTER_URL,
-    api_key=QDRANT_API_KEY
-
-)
-
-# Initialize the embedding model
-model_name = "BAAI/bge-small-en"
-model_kwargs = {'device': 'cpu'}
-encode_kwargs = {'normalize_embeddings': False}
-embeddings = HuggingFaceBgeEmbeddings(
-    model_name=model_name,
-    model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs
-)
 
 def extract_text_from_pdf(pdf_path):
     text = ""
@@ -72,13 +55,27 @@ pdf_path = "tax.pdf"
 text = extract_text_from_pdf(pdf_path)
 chunks = split_text_into_chunks(text, max_length=1500)
 
-qdrant = QdrantVectorStore.from_texts(
-    chunks,
-    embeddings,
-    location=":memory:",  # Local mode with in-memory storage only
-    collection_name="tax-v1",
+with open('embeddings.pkl', 'rb') as f:
+    embeddings = pickle.load(f)  
+
+
+client = chromadb.Client()
+
+collection = client.create_collection(name="tax_embeddings")
+
+ids = [f"doc_1_chunk_{i}" for i in range(len(chunks))]
+
+collection.add(
+    documents=chunks,
+    embeddings=embeddings,
+    ids=ids
+
 )
 
-found_docs = qdrant.similarity_search("tax evasion")
 
-print(found_docs)
+context = collection.query(
+    query_texts=['What is property tax'],
+    n_results=3  
+)
+
+print(context)
