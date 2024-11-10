@@ -43,7 +43,7 @@ class English2Urdu(Signature):
     - Urdu translation of the text, maintaining the original meaning, tone, and professionalism.
     """
     english_text = InputField(type=str, desc="English text to be translated.")
-    urdu_text = OutputField(type=str, desc="Urdu translation of the text with accurate meaning and tone.")
+    urdu_text = OutputField(type=str, desc="Urdu translation of the text with accurate meaning and tone. Give only the urdu translation not the original")
     
 class TaxAgentModule(Module):
     def __init__(self):

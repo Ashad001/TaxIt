@@ -5,10 +5,14 @@ import PyPDF2
 import chromadb
 from tax_agent import TaxAgentModule, TaxAgent
 import streamlit as st
+from chromadb.errors import UniqueConstraintError
 
-if "start" not in st.session_state:
-    chromadb.api.client.SharedSystemClient.clear_system_cache()
-    st.session_state.start = True
+
+chromadb.api.client.SharedSystemClient.clear_system_cache()
+
+# if "start" not in st.session_state:
+#     chromadb.api.client.SharedSystemClient.clear_system_cache()
+#     st.session_state.start = True
 
 class PDFTextExtractor:
     def __init__(self , max_pages=200):
@@ -63,7 +67,12 @@ class EmbeddingManager():
 class ChromaDBHandler:
     def __init__(self, collection_name="tax_embeddings"):
         self.client = chromadb.Client()
-        self.collection = self.client.create_collection(name=collection_name)
+        
+        try:
+            self.collection = self.client.create_collection(name=collection_name)
+        except UniqueConstraintError:
+            print(f"Collection {collection_name} already exists. Using the existing collection.")
+            self.collection = self.client.get_collection(name=collection_name)
 
     def add_documents(self, documents, embeddings, ids):
         print("--- Adding documents to the collection ---")
@@ -77,15 +86,17 @@ class ChromaDBHandler:
             print(str(e))
         print("--- Documents added successfully ---")
 
-    def query(self, query_texts, n_results=3):
+    def query(self, query_texts, n_results=2):
+        
         return self.collection.query(
             query_texts=query_texts,
             n_results=n_results
         )
+        
 
-def query_database(db_client, question, n_results=2):
-    response = db_client.query(query_texts=[question], n_results=n_results)
-    return " ".join(result[0] for result in response['documents'])
+# def query_database(db_client, question, n_results=2):
+#     response = db_client.query(query_texts=[question], n_results=n_results)
+#     return " ".join(result[0] for result in response['documents'])
 
 
 
@@ -114,24 +125,31 @@ if __name__ == "__main__":
     for result in response['documents']:
         context.append(result[0])
     context = " ".join(context)
-    print(context)
+   
+    # print(context)
     tax_agent = TaxAgentModule()
     
     # Running the TaxAgentModule
-    response = tax_agent.run(question=query, context=context)
     
+    
+    # response = tax_agent.run(question=query, context=context)
     # print("English response:", response[0])
     # print("Urdu response:", response[1])
     
-    st.title("Tax Information Assistant - Pakistan")
-    st.write("Ask any tax-related questions and get answers based on Pakistani tax laws.")
+    st.title("Smart Tax Assistant - Pakistan")
+    st.title("Be free from your Tax Worries")
+    st.write("Ask any tax-related questions and get answers based on Pakistan's Tax laws/ordinance and up-to-date computational slabs. ")
 
     # User input
     question = st.text_input("Enter your question:", "")
 
     # Process question and display answer
     if st.button("Get Answer") and question:
-        context = query_database(db_handler, question)
+        context = []
+        response =  db_handler.query(query_texts=[question])
+        for result in response['documents']:
+            context.append(result[0])
+        context = " ".join(context)
         if context:
             response = tax_agent.run(question=question, context=context)
             st.write("**Answer (English):**", response[0])
