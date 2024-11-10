@@ -3,6 +3,7 @@ import re
 import pickle
 import PyPDF2
 import chromadb
+from tax_agent import TaxAgentModule, TaxAgent
 
 class PDFTextExtractor:
     def __init__(self, pdf_path="tax.pdf", max_pages=200):
@@ -91,6 +92,18 @@ if __name__ == "__main__":
     ids = [f"doc_1_chunk_{i}" for i in range(len(chunks))]
     db_handler.add_documents(documents=chunks, embeddings=embeddings, ids=ids)
 
+    query = "What is property tax?"
     # Querying the collection
-    context = db_handler.query(query_texts=['What is property tax'], n_results=3)
+    response = db_handler.query(query_texts=[query], n_results=1)
+    context = []
+    for result in response['documents']:
+        context.append(result[0])
+    context = " ".join(context)
     print(context)
+    tax_agent = TaxAgentModule()
+    
+    # Running the TaxAgentModule
+    response = tax_agent.run(question=query, context=context)
+    
+    print("English response:", response[0])
+    print("Urdu response:", response[1])
