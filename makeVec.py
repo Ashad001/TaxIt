@@ -4,6 +4,11 @@ import pickle
 import PyPDF2
 import chromadb
 from tax_agent import TaxAgentModule, TaxAgent
+import streamlit as st
+
+if "start" not in st.session_state:
+    chromadb.api.client.SharedSystemClient.clear_system_cache()
+    st.session_state.start = True
 
 class PDFTextExtractor:
     def __init__(self , max_pages=200):
@@ -78,7 +83,15 @@ class ChromaDBHandler:
             n_results=n_results
         )
 
+def query_database(db_client, question, n_results=2):
+    response = db_client.query(query_texts=[question], n_results=n_results)
+    return " ".join(result[0] for result in response['documents'])
+
+
+
 if __name__ == "__main__":
+    
+    
     pdf_extractor = PDFTextExtractor()
     text1 = pdf_extractor.extract_text(pdf_path='tax.pdf')
     
@@ -107,5 +120,21 @@ if __name__ == "__main__":
     # Running the TaxAgentModule
     response = tax_agent.run(question=query, context=context)
     
-    print("English response:", response[0])
-    print("Urdu response:", response[1])
+    # print("English response:", response[0])
+    # print("Urdu response:", response[1])
+    
+    st.title("Tax Information Assistant - Pakistan")
+    st.write("Ask any tax-related questions and get answers based on Pakistani tax laws.")
+
+    # User input
+    question = st.text_input("Enter your question:", "")
+
+    # Process question and display answer
+    if st.button("Get Answer") and question:
+        context = query_database(db_handler, question)
+        if context:
+            response = tax_agent.run(question=question, context=context)
+            st.write("**Answer (English):**", response[0])
+            st.write("**Answer (Urdu):**", response[1])
+        else:
+            st.write("No relevant information found in the database.")
