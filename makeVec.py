@@ -61,11 +61,14 @@ class ChromaDBHandler:
 
     def add_documents(self, documents, embeddings, ids):
         print("--- Adding documents to the collection ---")
-        self.collection.add(
-            documents=documents,
-            embeddings=embeddings,
-            ids=ids
-        )
+        try:
+            self.collection.add(
+                documents=documents,
+                embeddings=embeddings,
+                ids=ids
+            )
+        except Exception as e:
+            print(str(e))
         print("--- Documents added successfully ---")
 
     def query(self, query_texts, n_results=3):
