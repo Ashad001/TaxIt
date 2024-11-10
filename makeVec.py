@@ -6,13 +6,13 @@ import chromadb
 from tax_agent import TaxAgentModule, TaxAgent
 
 class PDFTextExtractor:
-    def __init__(self, pdf_path="tax.pdf", max_pages=200):
-        self.pdf_path = pdf_path
+    def __init__(self , max_pages=200):
+      
         self.max_pages = max_pages
 
-    def extract_text(self):
+    def extract_text(self, pdf_path):
         text = ""
-        with open(self.pdf_path, 'rb') as file:
+        with open(pdf_path, 'rb') as file:
             reader = PyPDF2.PdfReader(file)
             for count, page in enumerate(reader.pages):
                 if count >= self.max_pages:
@@ -80,8 +80,10 @@ class ChromaDBHandler:
 
 if __name__ == "__main__":
     pdf_extractor = PDFTextExtractor()
-    text = pdf_extractor.extract_text()
-
+    text1 = pdf_extractor.extract_text(pdf_path='tax.pdf')
+    
+    text2 = pdf_extractor.extract_text(pdf_path='tax2.pdf')
+    text = 'Text Slabs and Computing Tax Rate and Amount: '+ text2 + 'Tax Laws and ordinance:' + text1
     chunker = TextChunker(max_length=1500)
     chunks = chunker.split_into_chunks(text)
 
@@ -92,9 +94,9 @@ if __name__ == "__main__":
     ids = [f"doc_1_chunk_{i}" for i in range(len(chunks))]
     db_handler.add_documents(documents=chunks, embeddings=embeddings, ids=ids)
 
-    query = "What is property tax?"
+    query = "What is an exemption in tax and how do you get one ?"
     # Querying the collection
-    response = db_handler.query(query_texts=[query], n_results=1)
+    response = db_handler.query(query_texts=[query], n_results=2)
     context = []
     for result in response['documents']:
         context.append(result[0])

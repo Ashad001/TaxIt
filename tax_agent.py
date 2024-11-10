@@ -10,13 +10,27 @@ dspy.settings.configure(lm=lm)
 
 class TaxAgent(Signature):
     """
-    You are an expert Tax Agent with comprehensive knowledge of tax regulations and financial reporting. 
-    Your role is to provide concise, accurate, and professional answers based on the specific tax data provided. 
-    When responding, structure your answer in clear, step-by-step explanations to ensure clarity and completeness.
+    You are an expert Pakistani Tax Agent with comprehensive knowledge of tax regulations and financial reporting. 
+    Your role is to provide accurate, and professional answers based on the Pakistan's Tax Ordinance Context provided. 
+    When responding, structure your answer in clear, step-by-step explanations to ensure clarity and completeness. 
+    Make sure to follow the given keywords - tags, these will help you to generate pointers for each specific tag.
     """
     question = InputField(type=str, desc="A detailed question related to tax data that needs answering.")
     context = InputField(type=str, desc="Detailed tax data or context to support the answer.")
+    Tags = InputField(type=str, desc = "These are the keywords you should revolve your pointers around and relate to the query.")
     answer_eng = OutputField(type=str, desc="The professional answer in English, structured step-by-step as requested.")
+
+class TagGenerator(Signature):
+   
+    """
+    You are an expert Prompt Engineer with comprehensive knowledge of how keyword specific tags work in LLMs 
+    Your role is to provide accurate, and clear KEYWORDS from the given Pakistan's Tax Ordinance context and a native user's query  
+    When responding, make sure you make a list of tags, with heading as 'Keywords to answer on:' and that these words help
+    LLM to generate comprehensive answers, related to the query.
+    """
+    question = InputField(type=str, desc="A question related to tax laws and data asked by a native user.")
+    context = InputField(type=str, desc="Detailed Pakistan's Tax Ordinance Context to support the answer.")
+    tags = OutputField(type=str, desc="The keyword specific tag list relating to the query, generated in English.")
 
 class English2Urdu(Signature):
     """
@@ -34,6 +48,7 @@ class English2Urdu(Signature):
 class TaxAgentModule(Module):
     def __init__(self):
         super().__init__()
+        self.tagGenerator = ChainOfThought(TagGenerator)
         self.tax_agent = ChainOfThought(TaxAgent)
         self.language_converter = ChainOfThought(English2Urdu)
 
@@ -41,7 +56,10 @@ class TaxAgentModule(Module):
         print("Running TaxAgentModule...")
 
         # Run the tax agent to get the professional tax summary
-        agent_response = self.tax_agent(question=question, context=context)
+
+        resp = self.tagGenerator(question=question, context=context)
+
+        agent_response = self.tax_agent(question=question, context=context, Tags=resp.tags)
         
         # Translate the English summary into Urdu
         urdu_response = self.language_converter(english_text=agent_response.answer_eng)
