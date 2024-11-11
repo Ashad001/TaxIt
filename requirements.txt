@@ -2,7 +2,5 @@ PyPDF2
 chromadb
 streamlit
 dspy
-python-dotenv
 pickle-mixin
-dotenv
-re
+pysqlite3-binary
