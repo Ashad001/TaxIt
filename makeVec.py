@@ -8,6 +8,11 @@ from chromadb.errors import UniqueConstraintError
 from tax_agent import *
 import os
 
+import sys as s
+
+__import__("pysqlite3")
+s.modules["sqlite3"] = s.modules.pop("pysqlite3")
+
 chromadb.api.client.SharedSystemClient.clear_system_cache()
 
 # if "start" not in st.session_state:
