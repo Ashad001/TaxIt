@@ -3,4 +3,3 @@ chromadb
 streamlit
 dspy
 pickle-mixin
-dotenv
