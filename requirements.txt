@@ -3,3 +3,4 @@ chromadb
 streamlit
 dspy
 pickle-mixin
+pysqlite3-binary
