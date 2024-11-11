@@ -1,5 +1,6 @@
 PyPDF2
-chromadb
+chromadb==0.4.5  
+duckdb==0.8.1
 streamlit
 dspy
 pickle-mixin
